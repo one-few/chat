@@ -1,0 +1,146 @@
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="/vue.js"></script>
+    <script src="/jquery.js"></script>
+    <script src="/jquery.cookie.js"></script>
+
+    <style>
+        *{
+            margin: 0px;
+            padding: 0px;
+            border:0px;
+            box-sizing:border-box;
+        }
+        li{list-style-type:none;}
+        .sendInput{
+            padding-left: 5px;
+            padding-right: 5px;
+            outline: none;
+            width:calc(100% - 100px);
+            height: 40px;
+            font-size: 24px;
+            background: aliceblue;
+        }
+        .but{
+            outline:none;
+            width: 100px;
+            float: right;
+            height: 100%;
+            background: #337ab7;
+            border-radius:0px;
+            color: #fff;
+        }
+    </style>
+    <script src="jquery.cookie.js"></script>
+</head>
+<body>
+<div  id="app">
+    <div style="line-height: 40px; padding-left: 5px; height:40px;border-bottom: 1px solid black;width: 100%; max-width: 800px;margin: auto;border-right: 1px solid black;border-left: 1px solid black;">
+        用户名：{{username}}，在线人数：{{userCount}}
+        <button class="but" @click="setting()">设置</button>
+    </div>
+    <div id="mb" style="width: 100%; max-width: 800px;background: #fff4d5;margin: auto; height:calc(100% - 81px) ;overflow-y:scroll;overflow-x: hidden; border-right: 1px solid black;border-left: 1px solid black;">
+        <ul v-for="(item, index) in message" style="padding: 5px;width: 100%;">
+            <li style="border-bottom: 1px solid black;width: 100%;word-wrap: break-word">{{item.sendName}}：{{item.text}} <p style="color: darkgrey;text-align:right">{{item.createDate}}</p></li>
+        </ul>
+    </div>
+    <div style="width: 100%; max-width: 800px;margin: auto; height: 40px;border-top: 1px solid black;border-right: 1px solid black;border-left: 1px solid black;">
+        <input  v-model="text" type="text" class="sendInput"/>
+        <button class="but" @click="send()">发送</button>
+    </div>
+
+</div>
+</body>
+<script>
+
+    new Vue({
+
+        el: '#app',
+        data: {
+            path:"ws://47.106.203.60:9090/websocket",
+            socket:null,
+            message: [],
+            text:"",
+            userCount:"",
+            username:""
+        },mounted () {
+            this.username = $.cookie("username")
+            this.init()
+        },methods: {
+            init() {
+                if(typeof(WebSocket) === "undefined"){
+                    alert("您的浏览器不支持socket")
+                }else{
+                    // 实例化socket
+                    this.socket = new WebSocket(this.path)
+                    // 监听socket连接
+                    this.socket.onopen = this.open
+                    // 监听socket错误信息
+                    this.socket.onerror = this.error
+                    // 监听socket消息
+                    this.socket.onmessage = this.getMessage
+
+
+                }
+            },
+            open() {
+
+                console.log("socket连接成功")
+                if (this.username != ""){
+                    this.socket.send(JSON.stringify({username:this.username,type:"setting"}))
+                }
+            },
+            error() {
+                console.log("连接错误")
+            },
+            getMessage(msg) {
+                console.log(msg.data)
+                let parse = JSON.parse(msg.data);
+                if(parse.type == "userCount"){
+                    this.userCount = parse.text
+                }else{
+                    this.message.push(parse)
+                }
+
+
+
+                this.$nextTick(function(){
+                    let elementById = document.getElementById("mb");
+                    elementById.scrollTop = elementById.scrollHeight;
+                })
+            },
+            setting(){
+                this.username = prompt("昵称：");
+                $.cookie("username",this.username,{expires:7,path:"/"})
+                this.socket.send(JSON.stringify({username:this.username,type:"setting"}))
+            },
+            send() {
+                if (this.text == "" ){
+                    return
+                }
+                if (this.username == "" || this.username == null){
+                    alert("请设置昵称")
+                    return
+                }
+
+                if (this.text.length > 250){
+                    alert("长度不能超过250")
+                    return
+                }
+
+                this.socket.send(JSON.stringify({message:this.text,type:"message"}))
+                this.text = ""
+            },
+            close() {
+                console.log("socket连接关闭")
+            }
+        },
+        destroyed () {
+            // 销毁监听
+            this.socket.onclose = this.close
+        }
+    })
+
+</script>
+</html>
