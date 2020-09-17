@@ -45,12 +45,13 @@
 </head>
 <body>
 <div id="app" v-cloak>
+    <div style="line-height: 20px; padding-left: 5px; height:20px;border-bottom: 1px solid black;width: 100%; max-width: 800px;margin: auto;border-right: 1px solid black;border-left: 1px solid black;"><a href="http://www.ttcxy.net">博客系统</a> | <a href="#">文件系统</a> | <a href="#">github</a></div>
     <div style="line-height: 40px; padding-left: 5px; height:40px;border-bottom: 1px solid black;width: 100%; max-width: 800px;margin: auto;border-right: 1px solid black;border-left: 1px solid black;">
         在线人数：{{userCount}}
         <button class="but" @click="dialogVisible = true">设置</button>
 
     </div>
-    <div id="mb" style="width: 100%; max-width: 800px;background: #fff4d5;margin: auto; height:calc(100% - 81px) ;overflow-y:scroll;overflow-x: hidden; border-right: 1px solid black;border-left: 1px solid black;">
+    <div id="mb" style="width: 100%; max-width: 800px;background: #fff4d5;margin: auto; height:calc(100% - 101px) ;overflow-y:scroll;overflow-x: hidden; border-right: 1px solid black;border-left: 1px solid black;">
         <ul v-for="(item, index) in message" style="padding: 5px;width: 100%;">
             <li style="border-bottom: 1px solid black;width: 100%;word-wrap: break-word"><strong style="color: #3a8ee6">{{item.sendName}}：</strong>{{item.text}} <p style="color: darkgrey;text-align:right">{{item.createDate}}</p></li>
         </ul>
