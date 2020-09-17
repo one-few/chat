@@ -54,11 +54,13 @@
 </body>
 <script>
 
+    alert(window.location.host)
+
     new Vue({
 
         el: '#app',
         data: {
-            path:"ws://47.106.203.60:9090/websocket",
+            path:"ws://" + window.location.host + "/websocket",
             socket:null,
             message: [],
             text:"",
