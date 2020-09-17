@@ -1,9 +1,10 @@
 <html>
-<head>
+<link>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="/vue.js"></script>
     <script src="/jquery.js"></script>
-
+    <script src="/index.js"></script>
+    <link href="/index.css" rel="stylesheet">
     <style>
         *{
             margin: 0px;
@@ -30,13 +31,24 @@
             border-radius:0px;
             color: #fff;
         }
+
+        [v-cloak] {
+            display: none;
+        }
+
+        .el-dialog{
+            width: 90%;
+            max-width:700px;
+        }
+
     </style>
 </head>
 <body>
-<div  id="app">
+<div id="app" v-cloak>
     <div style="line-height: 40px; padding-left: 5px; height:40px;border-bottom: 1px solid black;width: 100%; max-width: 800px;margin: auto;border-right: 1px solid black;border-left: 1px solid black;">
-        用户名：{{username}}，在线人数：{{userCount}}
-        <button class="but" @click="setting()">设置</button>
+        在线人数：{{userCount}}
+        <button class="but" @click="dialogVisible = true">设置</button>
+
     </div>
     <div id="mb" style="width: 100%; max-width: 800px;background: #fff4d5;margin: auto; height:calc(100% - 81px) ;overflow-y:scroll;overflow-x: hidden; border-right: 1px solid black;border-left: 1px solid black;">
         <ul v-for="(item, index) in message" style="padding: 5px;width: 100%;">
@@ -48,25 +60,53 @@
         <button class="but" @click="send()">发送</button>
     </div>
 
+    <el-dialog :show-close="false" title="提示.如果用户名不存在直接创建用户" :visible.sync="dialogVisible" >
+        <span>
+            <el-input placeholder="用户" v-model="username">
+                <template slot="prepend">用户</template>
+            </el-input>
+            <el-input placeholder="密码" v-model="password" style="margin-top: 15px;">
+                <template slot="prepend">密码</template>
+            </el-input>
+        </span>
+
+        <span slot="footer" class="dialog-footer">
+            <el-button @click="dialogVisible = false">取 消</el-button>
+            <el-button type="primary" @click="dialogVisible = false,setting()">确 定</el-button>
+          </span>
+    </el-dialog>
 </div>
 </body>
 <script>
-
     new Vue({
 
         el: '#app',
         data: {
+            dialogVisible: false,
             path:"ws://" + window.location.host + "/websocket",
             socket:null,
             message: [],
             text:"",
             userCount:"",
-            username:""
+            username:"",
+            password:""
         },mounted () {
-            // TODO 获取用户名
-            //this.username = $.cookie("username")
+            this.getUsername()
             this.init()
         },methods: {
+            getUsername(){
+                let _this = this;
+                $.ajax({
+                    url: "/get-username",
+                    type: 'get',
+                    contentType: 'application/json',
+                    dataType: 'text',
+                    async: false, // 同步
+                    success: function (result) {
+                        _this.username = result
+                    }
+                });
+            },
             init() {
                 if(typeof(WebSocket) === "undefined"){
                     alert("您的浏览器不支持socket")
@@ -84,11 +124,7 @@
                 }
             },
             open() {
-
                 console.log("socket连接成功")
-                if (this.username != ""){
-                    this.socket.send(JSON.stringify({username:this.username,type:"setting"}))
-                }
             },
             error() {
                 console.log("连接错误")
@@ -101,21 +137,27 @@
                 }else{
                     this.message.push(parse)
                 }
-
-
-
                 this.$nextTick(function(){
                     let elementById = document.getElementById("mb");
                     elementById.scrollTop = elementById.scrollHeight;
                 })
             },
             setting(){
-                this.username = prompt("昵称：");
-                $.cookie("username",this.username,{expires:7,path:"/"})
-                this.socket.send(JSON.stringify({username:this.username,type:"setting"}))
+
+                let _this = this
+                $.ajax({
+                    url: "/add-username/" + this.username + "/" + _this.password,
+                    type: 'get',
+                    contentType: 'application/json',
+                    dataType: 'text',
+                    async: false, // 同步
+                    success: function (result) {
+                        this.$message(result);
+                    }
+                });
             },
             send() {
-                if (this.text == "" ){
+                if (this.text == ""){
                     return
                 }
                 if (this.username == "" || this.username == null){
@@ -128,7 +170,7 @@
                     return
                 }
 
-                this.socket.send(JSON.stringify({message:this.text,type:"message"}))
+                this.socket.send(JSON.stringify({message:this.text}))
                 this.text = ""
             },
             close() {
@@ -140,6 +182,5 @@
             this.socket.onclose = this.close
         }
     })
-
 </script>
 </html>

@@ -4,16 +4,15 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import net.ttcxy.chat.config.HttpSessionConfigurator;
 import net.ttcxy.chat.entity.MessageDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.client.WebSocketClient;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.websocket.OnClose;
-import javax.websocket.OnMessage;
-import javax.websocket.OnOpen;
-import javax.websocket.Session;
+import javax.servlet.http.HttpSession;
+import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
 import javax.xml.ws.soap.Addressing;
 import java.io.IOException;
@@ -26,7 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author jackcooper
  * @create 2017-12-28 13:04
  */
-@ServerEndpoint(value = "/websocket")
+@ServerEndpoint(value = "/websocket",configurator = HttpSessionConfigurator.class)
 @Component
 public class ApplicationWebSocket{
 
@@ -41,7 +40,7 @@ public class ApplicationWebSocket{
 
     private static List<String> messageList = new ArrayList<>();
 
-    private static Map<String,String> usernameMap = new HashMap<>();
+    private static Map<String,HttpSession> httpSessionMap = new HashMap<>();
 
     @Autowired
     HttpServletRequest httpServletRequest;
@@ -49,16 +48,25 @@ public class ApplicationWebSocket{
     /**
      * 连接建立成功调用的方法*/
     @OnOpen
-    public void onOpen(Session session) {
+    public void onOpen(Session session, EndpointConfig endpointConfig) {
+
+        HttpSession httpSession = (HttpSession)endpointConfig.getUserProperties().get(HttpSession.class.getName());
+
+        httpSessionMap.put(session.getId(),httpSession);
 
         this.session = session;
         webSocketSet.add(this);     //加入set中
         addOnlineCount();           //在线数加1
         System.out.println("有新连接加入！当前在线人数为" + getOnlineCount());
         try {
-            final MessageDto messageDto = new MessageDto(MessageDto.USER_COUNT,"系统消息", "2020.06.15",  ""+getOnlineCount());
-            final String string = JSON.toJSONString(messageDto);
+            final MessageDto messageCount = new MessageDto(MessageDto.USER_COUNT,"系统消息", "2020.06.15",  ""+getOnlineCount());
+            final String string = JSON.toJSONString(messageCount);
             sendInfo(string);
+
+            final MessageDto msg = new MessageDto(MessageDto.MESSAGE,"系统消息", "2020.06.15",  "www.ttcxy.net");
+            final String m = JSON.toJSONString(msg);
+            sendMessage(m);
+
             for (String str : messageList){
                 sendMessage(str);
             }
@@ -86,40 +94,30 @@ public class ApplicationWebSocket{
     public void onMessage(String text, Session session) {
 
         final JSONObject json = JSON.parseObject(text);
-        final String type = json.getString("type");
-        if ("message".equals(type)){
-            final String username = usernameMap.get(session.getId());
-            if (StrUtil.isBlank(username)){
-                return;
-            }
-            final String jsonString = JSON.toJSONString(new MessageDto(MessageDto.MESSAGE,username, DateUtil.format(new Date(), "yyyy.MM.dd"), json.getString("message")));
-            if (messageList.size()>20){
-                synchronized (messageList){
-                    messageList.remove(0);
-                    messageList.add(jsonString);
-                }
-            }else{
+        HttpSession httpSession = httpSessionMap.get(session.getId());
+        String username = (String) httpSession.getAttribute("username");
+        final String jsonString = JSON.toJSONString(new MessageDto(MessageDto.MESSAGE,username, DateUtil.format(new Date(), "yyyy.MM.dd"), json.getString("message")));
+        if (messageList.size()>20){
+            synchronized (messageList){
+                messageList.remove(0);
                 messageList.add(jsonString);
             }
-            //群发消息
-            for (ApplicationWebSocket item : webSocketSet) {
-                try {
-                    item.sendMessage(jsonString);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+        }else{
+            messageList.add(jsonString);
+        }
+        //群发消息
+        for (ApplicationWebSocket item : webSocketSet) {
+            try {
+                item.sendMessage(jsonString);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
-
-        if ("setting".equals(type)){
-            usernameMap.put(session.getId(),json.getString("username"));
-        }
-
     }
 
     /**
      * 发生错误时调用
-     @OnError
+     @OnError 异常
      */
     public void onError(Session session, Throwable error) {
         System.out.println("发生错误");
@@ -127,24 +125,25 @@ public class ApplicationWebSocket{
     }
 
 
-    public void sendMessage(String jsonText) throws IOException {
+    /**
+     * 发送一条消息
+     * @param msg 消息
+     * @throws IOException 异常
+     */
+    public void sendMessage(String msg) throws IOException {
         //getBasicRemote是阻塞式的
-        this.session.getBasicRemote().sendText(jsonText);
-        //非阻塞式的
-        // this.session.getAsyncRemote().sendText(message);
+        this.session.getBasicRemote().sendText(msg);
+        //非阻塞式的 ， 消息顺序的问题
+        //this.session.getAsyncRemote().sendText(msg);
     }
 
 
     /**
-     * 群发自定义消息
+     * 群发消息推手那个
      * */
-    public static void sendInfo(String message) throws IOException {
+    public static void sendInfo(String msg) throws IOException {
         for (ApplicationWebSocket item : webSocketSet) {
-            try {
-                item.sendMessage(message);
-            } catch (IOException e) {
-                continue;
-            }
+            item.sendMessage(msg);
         }
     }
 
