@@ -1,8 +1,7 @@
 package net.ttcxy.chat.entity;
 
 /**
- * @author Huanglei
- * @date 2020/6/15
+ * created by huanglei on 2020/6/15
  */
 public class MessageDto {
 
