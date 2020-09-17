@@ -52,7 +52,7 @@
     </div>
     <div id="mb" style="width: 100%; max-width: 800px;background: #fff4d5;margin: auto; height:calc(100% - 81px) ;overflow-y:scroll;overflow-x: hidden; border-right: 1px solid black;border-left: 1px solid black;">
         <ul v-for="(item, index) in message" style="padding: 5px;width: 100%;">
-            <li style="border-bottom: 1px solid black;width: 100%;word-wrap: break-word">{{item.sendName}}：{{item.text}} <p style="color: darkgrey;text-align:right">{{item.createDate}}</p></li>
+            <li style="border-bottom: 1px solid black;width: 100%;word-wrap: break-word"><strong style="color: #3a8ee6">{{item.sendName}}：</strong>{{item.text}} <p style="color: darkgrey;text-align:right">{{item.createDate}}</p></li>
         </ul>
     </div>
     <div style="width: 100%; max-width: 800px;margin: auto; height: 40px;border-top: 1px solid black;border-right: 1px solid black;border-left: 1px solid black;">
@@ -152,7 +152,7 @@
                     dataType: 'text',
                     async: false, // 同步
                     success: function (result) {
-                        this.$message(result);
+                        alert(result)
                     }
                 });
             },

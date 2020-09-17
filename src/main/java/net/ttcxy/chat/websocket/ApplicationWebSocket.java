@@ -22,8 +22,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * @author jackcooper
- * @create 2017-12-28 13:04
+ * created by huanglei on 2020/09/18
  */
 @ServerEndpoint(value = "/websocket",configurator = HttpSessionConfigurator.class)
 @Component
@@ -59,11 +58,11 @@ public class ApplicationWebSocket{
         addOnlineCount();           //在线数加1
         System.out.println("有新连接加入！当前在线人数为" + getOnlineCount());
         try {
-            final MessageDto messageCount = new MessageDto(MessageDto.USER_COUNT,"系统消息", "2020.06.15",  ""+getOnlineCount());
+            final MessageDto messageCount = new MessageDto(MessageDto.USER_COUNT,"系统消息", DateUtil.formatDate(new Date()),  ""+getOnlineCount());
             final String string = JSON.toJSONString(messageCount);
             sendInfo(string);
 
-            final MessageDto msg = new MessageDto(MessageDto.MESSAGE,"系统消息", "2020.06.15",  "www.ttcxy.net");
+            final MessageDto msg = new MessageDto(MessageDto.MESSAGE,"系统消息", DateUtil.formatDate(new Date()),  "www.ttcxy.net");
             final String m = JSON.toJSONString(msg);
             sendMessage(m);
 
