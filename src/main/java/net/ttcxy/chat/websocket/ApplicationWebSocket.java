@@ -34,7 +34,7 @@ public class ApplicationWebSocket{
     private static AtomicInteger onlineCount = new AtomicInteger(0);
 
     //concurrent包的线程安全Set，用来存放每个客户端对应的ApplicationWebSocket对象。
-    private static CopyOnWriteArraySet<ApplicationWebSocket> webSocketSet = new CopyOnWriteArraySet<>();
+    private static CopyOnWriteArraySet<ApplicationWebSocket> webSocketSet = new CopyOnWriteArraySet<ApplicationWebSocket>();
 
     //与某个客户端的连接会话，需要通过它来给客户端发送数据
     private Session session;
@@ -44,13 +44,13 @@ public class ApplicationWebSocket{
     private static Map<String,String> usernameMap = new HashMap<>();
 
     @Autowired
-    private HttpServletRequest httpServletRequest;
+    HttpServletRequest httpServletRequest;
 
     /**
-     * 连接建立成功调用的方法
-     */
+     * 连接建立成功调用的方法*/
     @OnOpen
     public void onOpen(Session session) {
+
         this.session = session;
         webSocketSet.add(this);     //加入set中
         addOnlineCount();           //在线数加1

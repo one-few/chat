@@ -3,7 +3,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="/vue.js"></script>
     <script src="/jquery.js"></script>
-    <script src="/jquery.cookie.js"></script>
 
     <style>
         *{
@@ -32,7 +31,6 @@
             color: #fff;
         }
     </style>
-    <script src="jquery.cookie.js"></script>
 </head>
 <body>
 <div  id="app">
@@ -54,8 +52,6 @@
 </body>
 <script>
 
-    alert(window.location.host)
-
     new Vue({
 
         el: '#app',
@@ -67,7 +63,8 @@
             userCount:"",
             username:""
         },mounted () {
-            this.username = $.cookie("username")
+            // TODO 获取用户名
+            //this.username = $.cookie("username")
             this.init()
         },methods: {
             init() {
